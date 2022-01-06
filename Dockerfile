@@ -14,10 +14,21 @@ RUN echo "cloning ${BRANCH}" && \
     echo "running build-script" && \
     /bin/sh ./install.sh
 
+ARG VDF_BUILD
+# The current iteration of the install-timelord.sh script can't differentiate between Debian-Bullseye and Ubuntu assuming them to be the same.
+# Snap will not work inside a container so this needs to be addressed upstream.
+RUN if [ $VDF_BUILD = "true" ]; then \
+        echo "building vdf-client" && \
+        DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y cmake && \
+        sed '/ubuntu_cmake_install$/d' ./install-timelord.sh > ./install-timelord-mod.sh && \
+        . ./activate && \
+        /bin/sh ./install-timelord-mod.sh ; \
+    fi
+
 # IMAGE BUILD
 FROM python:3.9-slim
 
-EXPOSE 8555 8444
+EXPOSE 8555 8444 8446
 
 ENV CHIA_ROOT=/root/.chia/mainnet
 ENV keys="generate"
